@@ -1,7 +1,6 @@
 package com.marcellus.springwebfluxrestapi.repositories;
 
 import com.marcellus.springwebfluxrestapi.domain.Category;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
