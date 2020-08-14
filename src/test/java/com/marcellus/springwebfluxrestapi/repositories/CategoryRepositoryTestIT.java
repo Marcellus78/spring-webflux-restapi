@@ -36,7 +36,7 @@ class CategoryRepositoryTestIT {
     }
     @Test
     public void findFirstByName() {
-        categoryRepository.save(category1).block();
+        categoryRepository.save(category1).subscribe();
 
         Mono<Category> monoCategory = categoryRepository.findFirstByName("first category");
 
