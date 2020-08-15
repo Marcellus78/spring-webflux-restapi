@@ -5,12 +5,14 @@ import com.marcellus.springwebfluxrestapi.repositories.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.reactivestreams.Publisher;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static com.marcellus.springwebfluxrestapi.controllers.CategoryController.BASE_URL;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
@@ -54,6 +56,39 @@ class CategoryControllerTest {
                 .exchange()
                 .expectBody(Category.class)
                 .value(Category::getName, equalTo("Cat1"));
+
+    }
+    @Test
+    void createNewCategoryStream() {
+        given(categoryRepository.saveAll(any(Publisher.class)))
+                .willReturn(Flux.just(Category.builder().name("Some cat").build()));
+
+        Mono<Category> savedCategory = Mono.just(Category.builder().name("Cat1").build());
+
+        webTestClient.post()
+                .uri(BASE_URL)
+                .body(savedCategory, Category.class)
+                .exchange()
+                .expectStatus()
+                .isCreated();
+    }
+    @Test
+    void updateCategory() {
+
+        given(categoryRepository.findById(anyString()))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        given(categoryRepository.save(any(Category.class)))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        Mono<Category> returnedCategory = Mono.just(Category.builder().name("Cat1").build());
+
+        webTestClient.put()
+                .uri(BASE_URL + "/1")
+                .body(returnedCategory, Category.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
 
     }
 }
