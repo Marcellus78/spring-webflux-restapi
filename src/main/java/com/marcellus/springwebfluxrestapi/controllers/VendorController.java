@@ -2,10 +2,9 @@ package com.marcellus.springwebfluxrestapi.controllers;
 
 import com.marcellus.springwebfluxrestapi.domain.Vendor;
 import com.marcellus.springwebfluxrestapi.repositories.VendorRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.reactivestreams.Publisher;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -33,4 +32,46 @@ public class VendorController {
 
         return vendorRepository.findById(id);
     }
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping
+    public Mono<Void> createVendor(@RequestBody Publisher<Vendor> vendorStream) {
+
+        return vendorRepository.saveAll(vendorStream).then();
+    }
+    @ResponseStatus(HttpStatus.OK)
+    @PutMapping("/{id}")
+    public Mono<Vendor> updateVendor(@PathVariable String id,
+                                     @RequestBody Vendor vendor) {
+
+        return vendorRepository.findById(id)
+                .flatMap(returnedVendor -> {
+                    vendor.setId(returnedVendor.getId());
+                    return vendorRepository.save(vendor);
+                }).switchIfEmpty(Mono.error(new Exception("Vendor not found")));
+    }
+    @PatchMapping("/{id}")
+    public Mono<Vendor> patchVendor(@PathVariable String id,
+                                    @RequestBody Vendor vendor) {
+
+        return vendorRepository.findById(id)
+                .flatMap(returnedVendor -> {
+                    Mono<Vendor> savedVendor = Mono.just(returnedVendor);
+                    if(vendor.getFirstName() != null) {
+                        returnedVendor.setFirstName(vendor.getFirstName());
+                        savedVendor = vendorRepository.save(returnedVendor);
+                    }
+                    if(vendor.getLastName() != null) {
+                        returnedVendor.setLastName(vendor.getLastName());
+                        savedVendor = vendorRepository.save(returnedVendor);
+                    }
+                    return savedVendor;
+                }).switchIfEmpty(Mono.error(new Exception("Vendor not found")));
+
+    }
+    @DeleteMapping("/{id}")
+    public Mono<Void> deleteVendor(@PathVariable String id) {
+
+        return vendorRepository.deleteById(id).then();
+    }
+
 }

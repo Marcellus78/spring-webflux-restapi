@@ -49,4 +49,24 @@ public class CategoryController {
                     return categoryRepository.save(category);
                 }).switchIfEmpty(Mono.error(new Exception("Category not found")));
     }
+    @PatchMapping("/{id}")
+    public Mono<Category> patchCategory(@PathVariable String id,
+                                        @RequestBody Category category) {
+
+        return categoryRepository.findById(id)
+                .flatMap(returnedCategory -> {
+                    Mono<Category> savedCategory = Mono.just(returnedCategory);
+                    if(category.getName() != null) {
+                        returnedCategory.setName(category.getName());
+                        savedCategory = categoryRepository.save(returnedCategory);
+                    }
+                    return savedCategory;
+                }).switchIfEmpty(Mono.error(new Exception("Category not found")));
+
+    }
+    @DeleteMapping("/{id}")
+    public Mono<Void> deleteCategory(@PathVariable String id) {
+
+        return categoryRepository.deleteById(id).then();
+    }
 }

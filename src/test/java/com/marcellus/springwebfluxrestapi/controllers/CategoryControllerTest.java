@@ -15,6 +15,8 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class CategoryControllerTest {
 
@@ -89,6 +91,58 @@ class CategoryControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk();
+
+    }
+    @Test
+    void patchCategoryTest() {
+
+        given(categoryRepository.findById(anyString()))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        given(categoryRepository.save(any(Category.class)))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        Mono<Category> returnedCategory = Mono.just(Category.builder().name("Cat1").build());
+
+        webTestClient.patch()
+                .uri(BASE_URL + "/1")
+                .body(returnedCategory, Category.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+        verify(categoryRepository).save(any());
+    }
+    @Test
+    void patchCategoryNoChangeTest() {
+        given(categoryRepository.findById(anyString()))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        given(categoryRepository.save(any(Category.class)))
+                .willReturn(Mono.just(Category.builder().build()));
+
+        Mono<Category> returnedCategory = Mono.just(Category.builder().build());
+
+        webTestClient.patch()
+                .uri(BASE_URL + "/1")
+                .body(returnedCategory, Category.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+        verify(categoryRepository, never()).save(any());
+    }
+    @Test
+    void deleteCategoryTest() {
+
+        given(categoryRepository.deleteById(anyString()))
+                .willReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri(BASE_URL + "/1")
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        verify(categoryRepository).deleteById(anyString());
 
     }
 }

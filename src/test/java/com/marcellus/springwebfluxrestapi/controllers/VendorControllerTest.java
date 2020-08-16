@@ -5,15 +5,18 @@ import com.marcellus.springwebfluxrestapi.repositories.VendorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.reactivestreams.Publisher;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static com.marcellus.springwebfluxrestapi.controllers.VendorController.BASE_URL;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class VendorControllerTest {
 
@@ -53,4 +56,112 @@ class VendorControllerTest {
                 .expectBody(Vendor.class)
                 .value(vendor -> vendor.getFirstName(), equalTo("Joe"));
     }
+    @Test
+    public void createVendorTest() {
+
+        given(vendorRepository.saveAll(any(Publisher.class)))
+                .willReturn(Flux.just(Vendor.builder().build()));
+
+        Mono<Vendor> savedVendor =
+                Mono.just(Vendor.builder().firstName("Joe").lastName("Doe").build());
+
+        webTestClient.post()
+                .uri(BASE_URL)
+                .body(savedVendor, Vendor.class)
+                .exchange()
+                .expectStatus()
+                .isCreated();
+    }
+    @Test
+    public void updateVendorTest() {
+
+        given(vendorRepository.findById(anyString()))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        given(vendorRepository.save(any(Vendor.class)))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        Mono<Vendor> savedVendor =
+                Mono.just(Vendor.builder().firstName("Joe").lastName("Doe").build());
+
+        webTestClient.put()
+                .uri(BASE_URL + "/1")
+                .body(savedVendor, Vendor.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+    }
+    @Test
+    public void patchVendorByFirstName() {
+
+        given(vendorRepository.findById(anyString()))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        given(vendorRepository.save(any(Vendor.class)))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        Mono<Vendor> patchedVendor = Mono.just(Vendor.builder().firstName("Joe").build());
+
+        webTestClient.patch()
+                .uri(BASE_URL + "/1")
+                .body(patchedVendor, Vendor.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        verify(vendorRepository).save(any());
+    }
+    @Test
+    public void patchVendorByLastName() {
+        given(vendorRepository.findById(anyString()))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        given(vendorRepository.save(any(Vendor.class)))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        Mono<Vendor> patchedVendor = Mono.just(Vendor.builder().lastName("Doe").build());
+
+        webTestClient.patch()
+                .uri(BASE_URL + "/1")
+                .body(patchedVendor, Vendor.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        verify(vendorRepository).save(any());
+    }
+    @Test
+    public void patchVendorNoChange() {
+        given(vendorRepository.findById(anyString()))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        given(vendorRepository.save(any(Vendor.class)))
+                .willReturn(Mono.just(Vendor.builder().build()));
+
+        Mono<Vendor> patchedVendor = Mono.just(Vendor.builder().build());
+
+        webTestClient.patch()
+                .uri(BASE_URL + "/1")
+                .body(patchedVendor, Vendor.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        verify(vendorRepository,never()).save(any());
+    }
+    @Test
+    public void deleteVendor() {
+
+        given(vendorRepository.deleteById(anyString()))
+                .willReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri(BASE_URL + "/1")
+                .exchange()
+                .expectStatus()
+                .isOk();
+        verify(vendorRepository).deleteById(anyString());
+    }
+
 }
